@@ -1,5 +1,6 @@
 package dev.kikugie.wavebot.bot
 
+import dev.kikugie.wavebot.Main
 import dev.kikugie.wavebot.Main.CONFIG
 import dev.kikugie.wavebot.Main.GUILD
 import dev.kikugie.wavebot.Main.LOGGER
@@ -34,12 +35,34 @@ class WavebotExtension : Extension() {
                         return@forEach
                     }
                     LOGGER.debug("Creating ticket for {}", entry.discord)
-                    ChannelManager.ticket(entry).onFailure {
+                    ChannelManager.ticket(message, entry).onFailure {
                         LOGGER.error("Failed to create ticket", it)
                         respond { content = "Failed to create ticket: ${it.message}" }
                     }.onSuccess {
                         LOGGER.debug("Ticket created for {}", entry.discord)
                         respond { content = "Ticket created" }
+                    }
+                }
+            }
+        }
+        ephemeralMessageCommand {
+            name = Translations.deny
+
+            guild(GUILD.id)
+            requirePermission(Permission.ManageRoles)
+            action {
+                targetMessages.forEach { message ->
+                    LOGGER.debug("Processing message {}", message.id)
+                    val entry = STORAGE.messages[message.id] ?: run {
+                        respond { content = "Selected message is not an application" }
+                        return@forEach
+                    }
+                    ChannelManager.deny(message, entry).onFailure {
+                        LOGGER.error("Failed to deny ticket", it)
+                        respond { content = "Failed to deny ticket: ${it.message}" }
+                    }.onSuccess {
+                        LOGGER.debug("Denied ticket for {}", entry.discord)
+                        respond { content = "Ticket denied" }
                     }
                 }
             }
@@ -93,6 +116,7 @@ class WavebotExtension : Extension() {
             action {
                 CONFIG = load("config.json", BotConfig.Companion::empty)
                 STORAGE = load("runtime.json", RuntimeData.Companion::empty)
+                Main.update()
                 respond { content = "Configuration reloaded" }
             }
         }
