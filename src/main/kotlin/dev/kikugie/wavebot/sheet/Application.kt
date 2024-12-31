@@ -37,7 +37,6 @@ class ApplicationData(val type: ApplicationType) {
     var age: String = IDK
     var timezone: String = IDK
 
-    @Transient
     val answers: GroupingDictionary =
         GroupingDictionary()
 
