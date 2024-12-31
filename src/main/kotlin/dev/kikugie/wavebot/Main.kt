@@ -28,6 +28,7 @@ import kotlin.io.path.inputStream
 typealias Grid<T> = List<List<T>>
 
 suspend fun main(args: Array<String>) = Main.main()
+@OptIn(ExperimentalSerializationApi::class)
 internal inline fun <reified T : Saveable> load(path: String, default: () -> T) = Path(path).let {
     if (it.exists()) it.inputStream().use { stream -> JSON.decodeFromStream<T>(stream) }
     else default().apply { save() }
@@ -63,20 +64,24 @@ object Main {
         var n = 0
         while (isActive) {
             LOGGER.info("Pinging server every ${CONFIG.refresh}ms (${++n} attempt)")
-            for (it in CONFIG.sheets.keys) Spreadsheet.request(it).onSuccess { sheet ->
-                val new = Spreadsheet.update(it, sheet)
-                LOGGER.info("Received ${new.size} new applications for '$it'")
-                for (data in new) ChannelManager.preview(data).onFailure { e ->
-                    LOGGER.error("Failed to create post for ${data.minecraft} ($it)", e)
-                }
-            }.onFailure { e ->
-                LOGGER.error("Failed to fetch spreadsheet for '$it'", e)
-            }
-            val now = Clock.System.now()
-            for ((_, it) in STORAGE.tickets)
-                if (it.state == TicketState.REJECTED && now - it.countdown <= CONFIG.countdown)
-                    ChannelManager.delete(it)
+            update()
             delay(CONFIG.refresh)
         }
+    }
+
+    internal suspend fun update() {
+        for (it in CONFIG.sheets.keys) Spreadsheet.request(it).onSuccess { sheet ->
+            val new = Spreadsheet.update(it, sheet)
+            LOGGER.info("Received ${new.size} new applications for '$it'")
+            for (data in new) ChannelManager.preview(data).onFailure { e ->
+                LOGGER.error("Failed to create post for ${data.minecraft} ($it)", e)
+            }
+        }.onFailure { e ->
+            LOGGER.error("Failed to fetch spreadsheet for '$it'", e)
+        }
+        val now = Clock.System.now()
+        for ((_, it) in STORAGE.tickets)
+            if (it.state == TicketState.REJECTED && now - it.countdown <= CONFIG.countdown)
+                ChannelManager.delete(it)
     }
 }

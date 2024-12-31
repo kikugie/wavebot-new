@@ -18,7 +18,7 @@ object Spreadsheet {
     private val CLIENT = HttpClient()
 
     suspend fun request(type: String): Result<Table> {
-        val source: String = CONFIG.sources[type]!!
+        val source: String = CONFIG.source
         val sheet: String = CONFIG.sheets[type]!!
         val url: String = URL_BASE.format(source, sheet, TOKEN).replace(" ", "%20")
         val response: HttpResponse = CLIENT.get(url)
@@ -39,7 +39,7 @@ object Spreadsheet {
         return new
     }
 
-    private fun List<String>.isApplication() = firstOrNull()?.startsWith("202") == true
+    private fun List<String>.isApplication() = firstOrNull()?.contains("202") == true
 
     @Serializable
     data class Table(val range: String, val keys: List<String> = emptyList(), val values: Grid<String>)

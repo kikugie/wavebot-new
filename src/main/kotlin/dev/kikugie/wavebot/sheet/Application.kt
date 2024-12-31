@@ -20,6 +20,13 @@ private fun List<String>.getOrIDK(index: Int) = getOrNull(index)?.takeIf(String:
 private fun MutableMap<String, String>.byIndex(index: Int, list1: List<String>, list2: List<String>) {
     put(list1[index], list2.getOrNull(index)?.takeIf { it.isNotBlank() } ?: return)
 }
+private fun ApplicationData.defaults(data: List<String>) {
+    discord = data.getOrIDK(1)
+    minecraft = data.getOrIDK(2)
+    age = data.getOrIDK(3)
+    timezone = data.getOrIDK(4)
+    pronouns = data.getOrIDK(5)
+}
 private fun String.limitTo(n: Int) = if (length <= n) this else "${take(n - 3)}..."
 
 @Serializable
@@ -70,60 +77,42 @@ enum class ApplicationType {
         override val color: Color = Color(255, 0, 0)
 
         override fun parse(keys: List<String>, data: List<String>) = build {
-            discord = data.getOrIDK(1)
-            minecraft = data.getOrIDK(2)
-            age = data.getOrIDK(3)
-            pronouns = data.getOrIDK(4)
-            timezone = data.getOrIDK(17)
+            defaults(data)
 
-            answers.group {
+            answers.group {// Test questions
                 byIndex(6, keys, data)
                 byIndex(7, keys, data)
-            }
-
-            answers.group {
-                byIndex(5, keys, data)
-                byIndex(14, keys, data)
-                byIndex(13, keys, data)
-                byIndex(15, keys, data)
-                byIndex(18, keys, data)
-            }
-
-            answers.group {
                 byIndex(8, keys, data)
+            }
+
+            answers.group {
                 byIndex(9, keys, data)
                 byIndex(10, keys, data)
                 byIndex(11, keys, data)
                 byIndex(12, keys, data)
+                byIndex(13, keys, data)
             }
 
             answers.group {
-                byIndex(16, keys, data)
+                byIndex(14, keys, data)
             }
         }
     },
     CREATIVE {
         override val color: Color = Color(0, 0, 255)
 
-        override fun parse(keys: List<String>, data: List<String>) = build { 
-            discord = data.getOrIDK(1)
-            minecraft = data.getOrIDK(2)
-            age = data.getOrIDK(3)
-            pronouns = data.getOrIDK(4)
+        override fun parse(keys: List<String>, data: List<String>) = build {
+            defaults(data)
 
             answers.group {
                 byIndex(6, keys, data)
-            }
-
-            answers.group {
-                byIndex(5, keys, data)
                 byIndex(7, keys, data)
                 byIndex(8, keys, data)
+                byIndex(9, keys, data)
                 byIndex(10, keys, data)
             }
-
             answers.group {
-                byIndex(9, keys, data)
+                byIndex(11, keys, data)
             }
         }
     },
@@ -131,15 +120,16 @@ enum class ApplicationType {
         override val color: Color = Color(0, 255, 0)
 
         override fun parse(keys: List<String>, data: List<String>) = build {
-            discord = data.getOrIDK(1)
-            minecraft = data.getOrIDK(2)
-            pronouns = data.getOrIDK(7)
-            age = data.getOrIDK(3)
+            defaults(data)
 
             answers.group {
-                byIndex(4, keys, data)
-                byIndex(5, keys, data)
                 byIndex(6, keys, data)
+                byIndex(7, keys, data)
+                byIndex(8, keys, data)
+                byIndex(9, keys, data)
+            }
+            answers.group {
+                byIndex(10, keys, data)
             }
         }
     };

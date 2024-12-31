@@ -10,7 +10,7 @@ typealias Dictionary = Map<String, String>
 
 @Serializable
 data class BotConfig(
-    val sources: Dictionary,
+    val source: String,
     val sheets: Dictionary,
     val refresh: Duration,
     val countdown: Duration,
@@ -20,7 +20,7 @@ data class BotConfig(
     override val file: String = "config.json"
 
     companion object {
-        fun empty() = BotConfig(emptyMap(), emptyMap(), Duration.ZERO, Duration.ZERO, ServerData())
+        fun empty() = BotConfig("", emptyMap(), Duration.ZERO, Duration.ZERO, ServerData())
     }
 }
 

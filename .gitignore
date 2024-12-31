@@ -115,5 +115,5 @@ data/
 # Env vars - don't commit this!
 .env
 /.idea/
-/config.json
+/test.config.json
 /runtime.json
