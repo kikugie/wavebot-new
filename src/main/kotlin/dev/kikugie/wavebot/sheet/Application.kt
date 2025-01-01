@@ -77,7 +77,7 @@ class ApplicationData(val type: ApplicationType) {
 
     companion object {
         @JvmStatic fun parse(type: String, keys: List<String>, data: List<String>): Result<ApplicationData> =
-            ApplicationType.of(type).parse(keys, data)
+            ApplicationType.of(type).parse(keys, data.map { it.trim() })
     }
 }
 
