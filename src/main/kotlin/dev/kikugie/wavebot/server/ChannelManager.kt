@@ -8,6 +8,7 @@ import dev.kikugie.wavebot.sheet.ApplicationData
 import dev.kikugie.wavebot.sheet.Ticket
 import dev.kikugie.wavebot.sheet.TicketState
 import dev.kikugie.wavebot.util.referring
+import dev.kord.common.entity.ButtonStyle
 import dev.kord.common.entity.Permission
 import dev.kord.common.entity.Permissions
 import dev.kord.common.entity.Snowflake
@@ -17,17 +18,17 @@ import dev.kord.core.behavior.channel.edit
 import dev.kord.core.behavior.channel.editMemberPermission
 import dev.kord.core.behavior.channel.threads.edit
 import dev.kord.core.behavior.createTextChannel
+import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.getChannelOf
 import dev.kord.core.behavior.getChannelOfOrNull
 import dev.kord.core.entity.Message
 import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.entity.channel.VoiceChannel
 import dev.kord.core.entity.channel.thread.ThreadChannel
+import dev.kord.rest.builder.message.actionRow
+import dev.kordex.core.components.components
 import dev.kordex.core.utils.addReaction
 import dev.kordex.core.utils.dm
-import dev.kordex.core.utils.getParentMessage
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 
@@ -40,7 +41,19 @@ object ChannelManager {
 
     suspend fun preview(entry: ApplicationData) = kotlin.runCatching {
         val channel = GUILD.getChannel(CONFIG.server.previewChannel).asChannelOf<TextChannel>()
-        val message = entry.preview(channel).also {
+        val message = channel.createMessage {
+            entry.preview(this)
+            components {
+                actionRow {
+                    interactionButton(ButtonStyle.Success, "wavebot/ticket/open") {
+                        label = "Open ticket"
+                    }
+                    interactionButton(ButtonStyle.Danger, "wavebot/ticket/deny") {
+                        label = "Deny ticket"
+                    }
+                }
+            }
+        }.also {
             STORAGE.messages[it.id] = entry.toReference(STORAGE.applications[entry.type.text]!!)
             STORAGE.save()
             it.addReaction(THUMBSUP)
@@ -65,7 +78,7 @@ object ChannelManager {
             position = Int.MAX_VALUE
             parentId = CONFIG.server.applicationCategory
         }
-        entry.preview(channel)
+        channel.createMessage { entry.preview(this) }
         entry.contents(channel)
 
         val ticket = Ticket(member.id, channel.id, TicketState.OPEN)
@@ -73,6 +86,7 @@ object ChannelManager {
         STORAGE.tickets[member.id] = ticket
         STORAGE.save()
 
+        message.edit { components { applyToMessage() } }
         member.addRole(CONFIG.server.applicantRole)
         channel.editMemberPermission(member.id) {
             allowed = Permission.ViewChannel + Permission.SendMessages
@@ -98,6 +112,7 @@ object ChannelManager {
         STORAGE.tickets[member.id] = ticket
         STORAGE.save()
 
+        message.edit { components { applyToMessage() } }
         member.asUser().dm {
             content = """
                 ## ${Translations.Deny.title.translate()}
@@ -125,7 +140,6 @@ object ChannelManager {
             parentId = CONFIG.server.archiveCategory
             position = 0
         }
-
     }
 
     suspend fun reject(ticket: Ticket) = kotlin.runCatching {

@@ -8,10 +8,11 @@ import dev.kord.common.Color
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
 import dev.kord.core.entity.Member
+import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
+import dev.kord.rest.builder.message.embed
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 
 private const val IDK = "?"
 private inline fun ApplicationType.build(action: ApplicationData.() -> Unit) = kotlin.runCatching {
@@ -36,7 +37,6 @@ data class ApplicationReference(
     val index: Int
 ) {
     fun toEntry(map: Map<String, List<ApplicationData>>) = map[type]?.getOrNull(index)
-        ?: error("No application data for $type #$index")
 }
 
 @Serializable
@@ -55,7 +55,7 @@ class ApplicationData(val type: ApplicationType) {
         .filter { it.username == discord || it.tag == discord || it.nickname == discord }
         .firstOrNull()
 
-    suspend fun preview(channel: MessageChannelBehavior) = channel.createEmbed {
+    suspend fun preview(builder: UserMessageCreateBuilder) = builder.embed {
         color = type.color
         title = "${minecraft.referring()} ${type.text} application"
         field { name = "Discord"; value = discord; inline = true }
