@@ -30,7 +30,7 @@ class WavebotExtension : Extension() {
             action {
                 targetMessages.forEach { message ->
                     LOGGER.debug("Processing message {}", message.id)
-                    val entry = STORAGE.messages[message.id] ?: run {
+                    val entry = STORAGE.messages[message.id]?.toEntry(STORAGE.applications) ?: run {
                         respond { content = "Selected message is not an application" }
                         return@forEach
                     }
@@ -53,7 +53,7 @@ class WavebotExtension : Extension() {
             action {
                 targetMessages.forEach { message ->
                     LOGGER.debug("Processing message {}", message.id)
-                    val entry = STORAGE.messages[message.id] ?: run {
+                    val entry = STORAGE.messages[message.id]?.toEntry(STORAGE.applications) ?: run {
                         respond { content = "Selected message is not an application" }
                         return@forEach
                     }

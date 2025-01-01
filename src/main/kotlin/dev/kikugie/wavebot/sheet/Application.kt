@@ -30,6 +30,15 @@ private fun ApplicationData.defaults(data: List<String>) {
 private fun String.limitTo(n: Int) = if (length <= n) this else "${take(n - 3)}..."
 
 @Serializable
+data class ApplicationReference(
+    val type: String,
+    val index: Int
+) {
+    fun toEntry(map: Map<String, List<ApplicationData>>) = map[type]?.getOrNull(index)
+        ?: error("No application data for $type #$index")
+}
+
+@Serializable
 class ApplicationData(val type: ApplicationType) {
     var discord: String = IDK
     var minecraft: String = IDK
@@ -39,6 +48,8 @@ class ApplicationData(val type: ApplicationType) {
 
     val answers: GroupingDictionary =
         GroupingDictionary()
+
+    fun toReference(list: List<ApplicationData>) = ApplicationReference(type.text, list.indexOf(this))
 
     suspend fun findMember(): Member? = GUILD.members
         .filter { it.username == discord || it.tag == discord || it.nickname == discord }

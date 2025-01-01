@@ -9,12 +9,9 @@ internal fun String.referring() = when (this.lastOrNull()) {
 }
 
 @Serializable
-class GroupingDictionary : Iterable<Dictionary> {
-    val groups = mutableListOf<Dictionary>()
+class GroupingDictionary : MutableList<Dictionary> by mutableListOf() {
     inline fun group(block: MutableMap<String, String>.() -> Unit) {
         val map = mutableMapOf<String, String>().apply(block)
-        if (map.isNotEmpty()) groups += map
+        if (map.isNotEmpty()) this += map
     }
-
-    override fun iterator(): Iterator<Dictionary> = groups.iterator()
 }

@@ -34,14 +34,14 @@ import kotlinx.serialization.ExperimentalSerializationApi
 @ExperimentalSerializationApi
 object ChannelManager {
     private const val CHECKMARK = "✅"
-    private const val CROSSMARK = "❎"
+    private const val CROSSMARK = "❌"
     private const val THUMBSUP = "\uD83D\uDC4D"
     private const val THUMBSDOWN = "\uD83D\uDC4E"
 
     suspend fun preview(entry: ApplicationData) = kotlin.runCatching {
         val channel = GUILD.getChannel(CONFIG.server.previewChannel).asChannelOf<TextChannel>()
         val message = entry.preview(channel).also {
-            STORAGE.messages[it.id] = entry
+            STORAGE.messages[it.id] = entry.toReference(STORAGE.applications[entry.type.text]!!)
             STORAGE.save()
             it.addReaction(THUMBSUP)
             it.addReaction(THUMBSDOWN)
@@ -69,6 +69,7 @@ object ChannelManager {
         entry.contents(channel)
 
         val ticket = Ticket(member.id, channel.id, TicketState.OPEN)
+        STORAGE.messages.remove(message.id)
         STORAGE.tickets[member.id] = ticket
         STORAGE.save()
 
@@ -93,6 +94,7 @@ object ChannelManager {
         check(STORAGE.tickets[member.id] == null) { "User already has a ticket" }
 
         val ticket = Ticket(member.id, Snowflake(0), TicketState.REJECTED)
+        STORAGE.messages.remove(message.id)
         STORAGE.tickets[member.id] = ticket
         STORAGE.save()
 
