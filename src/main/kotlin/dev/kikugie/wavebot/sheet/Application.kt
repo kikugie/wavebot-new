@@ -2,6 +2,7 @@ package dev.kikugie.wavebot.sheet
 
 import dev.kikugie.wavebot.Main.GUILD
 import dev.kikugie.wavebot.util.GroupingDictionary
+import dev.kikugie.wavebot.util.group
 import dev.kikugie.wavebot.util.referring
 import dev.kord.common.Color
 import dev.kord.core.behavior.channel.MessageChannelBehavior
@@ -46,8 +47,7 @@ class ApplicationData(val type: ApplicationType) {
     var age: String = IDK
     var timezone: String = IDK
 
-    val answers: GroupingDictionary =
-        GroupingDictionary()
+    val answers: GroupingDictionary = mutableListOf()
 
     fun toReference(list: List<ApplicationData>) = ApplicationReference(type.text, list.indexOf(this))
 

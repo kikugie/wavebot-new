@@ -8,10 +8,8 @@ internal fun String.referring() = when (this.lastOrNull()) {
     else -> "$this's"
 }
 
-@Serializable
-class GroupingDictionary : MutableList<Dictionary> by mutableListOf() {
-    inline fun group(block: MutableMap<String, String>.() -> Unit) {
-        val map = mutableMapOf<String, String>().apply(block)
-        if (map.isNotEmpty()) this += map
-    }
+internal typealias GroupingDictionary = MutableList<Dictionary>
+inline fun GroupingDictionary.group(block: MutableMap<String, String>.() -> Unit) {
+    val map = mutableMapOf<String, String>().apply(block)
+    if (map.isNotEmpty()) this += map
 }
