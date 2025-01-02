@@ -18,6 +18,7 @@ import dev.kord.core.behavior.channel.edit
 import dev.kord.core.behavior.channel.editMemberPermission
 import dev.kord.core.behavior.channel.threads.edit
 import dev.kord.core.behavior.createTextChannel
+import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.getChannelOf
 import dev.kord.core.behavior.getChannelOfOrNull
 import dev.kord.core.entity.Message
@@ -50,7 +51,7 @@ object ChannelManager {
                     interactionButton(ButtonStyle.Danger, "wavebot/ticket/deny") {
                         label = "Deny ticket"
                     }
-                    interactionButton(ButtonStyle.Danger, "wavebot/ticket/edit") {
+                    interactionButton(ButtonStyle.Link, "wavebot/ticket/edit") {
                         label = "Edit discord"
                     }
                 }
@@ -126,6 +127,7 @@ object ChannelManager {
         check(STORAGE.tickets[member.id] == null) { "User already has a ticket" }
 
         entry.discord = discord
+        message.edit { entry.preview(this) }
         STORAGE.save()
     }
 

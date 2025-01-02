@@ -7,14 +7,10 @@ import dev.kikugie.wavebot.Main.LOGGER
 import dev.kikugie.wavebot.Main.STORAGE
 import dev.kikugie.wavebot.load
 import dev.kikugie.wavebot.server.BotConfig
-import dev.kikugie.wavebot.i18n.Translations.Wavebot.Extension as Translations
 import dev.kikugie.wavebot.server.ChannelManager
 import dev.kikugie.wavebot.server.RuntimeData
 import dev.kord.common.entity.Permission
-import dev.kord.common.entity.TextInputStyle
-import dev.kord.core.behavior.interaction.modal
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
-import dev.kord.core.event.interaction.ModalSubmitInteractionCreateEvent
 import dev.kordex.core.components.forms.ModalForm
 import dev.kordex.core.extensions.Extension
 import dev.kordex.core.extensions.ephemeralMessageCommand
@@ -22,6 +18,7 @@ import dev.kordex.core.extensions.ephemeralSlashCommand
 import dev.kordex.core.extensions.event
 import dev.kordex.core.i18n.types.Key
 import kotlinx.serialization.ExperimentalSerializationApi
+import dev.kikugie.wavebot.i18n.Translations.Wavebot.Extension as Translations
 
 @OptIn(ExperimentalSerializationApi::class)
 class WavebotExtension : Extension() {
@@ -52,12 +49,16 @@ class WavebotExtension : Extension() {
                     }
 
                     "edit" -> {
-                        event.interaction.modal("Edit discord", "wavebot/form/edit") {
-                            actionRow {
-                                textInput(TextInputStyle.Short, "content", "Edit discord") {
-                                    required = true
-                                }
-                            }
+                        val modal = EditDiscordForm()
+                        val result = modal.sendAndAwait(this) {
+                            it?.textInputs?.get("content")?.value
+                        } ?: kotlin.run {
+                            LOGGER.error("Failed to get modal response")
+                            return@action
+                        }
+
+                        ChannelManager.edit(message, entry, result).onFailure {
+                            LOGGER.error("Failed to edit discord name", it)
                         }
                     }
 
@@ -66,23 +67,6 @@ class WavebotExtension : Extension() {
             }
         }
 
-        event<ModalSubmitInteractionCreateEvent> {
-            check {
-                failIf(!event.interaction.modalId.startsWith("wavebot/form/edit"))
-            }
-            action {
-                val entry = STORAGE.messages[event.interaction.message?.id]?.toEntry(STORAGE.applications) ?: run {
-                    LOGGER.error("Selected message is not an application")
-                    return@action
-                }
-
-                val content = event.interaction.textInputs["content"]?.value ?: run {
-                    LOGGER.error("No content provided")
-                }
-
-                ChannelManager.edit(event.interaction.message!!, entry, content.toString())
-            }
-        }
         ephemeralMessageCommand {
             name = Translations.ticket
 
@@ -131,7 +115,7 @@ class WavebotExtension : Extension() {
             }
         }
         ephemeralMessageCommand(::EditDiscordForm) {
-            name = Translations.deny
+            name = Translations.edit
 
             guild(GUILD.id)
             requirePermission(Permission.ManageRoles)
@@ -141,11 +125,18 @@ class WavebotExtension : Extension() {
                         respond { content = "Selected message is not an application" }
                         return@forEach
                     }
-                    val content = it?.content?.value ?: run {
+                    val result = it?.content?.value ?: run {
                         respond { content = "No content provided" }
                         return@action
                     }
-                    ChannelManager.edit(message, entry, content)
+                    ChannelManager.edit(message, entry, result)
+                        .onSuccess {
+                            respond { content = "Changed discord name to $result" }
+                        }
+                        .onFailure {
+                            respond { content = "Failed to change discord name: ${it.message}" }
+                            LOGGER.error("Failed to change discord name", it)
+                        }
                 }
             }
         }
@@ -207,6 +198,7 @@ class WavebotExtension : Extension() {
     private inner class EditDiscordForm : ModalForm() {
         override var title: Key = Translations.edit
         val content = lineText {
+            id = "content"
             label = Translations.edit
         }
     }

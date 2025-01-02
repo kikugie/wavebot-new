@@ -20,7 +20,7 @@ internal val URL_PATTERN = Regex("""(https://www\.|http://www\.|https://|http://
 internal fun findLinks(text: String) = URL_PATTERN.findAll(text).map { it.value }.mapNotNull {
     val url = runCatching { URI.create(it).toURL() }.getOrNull() ?: return@mapNotNull null
     when (url.host) {
-        "drive.google.com" -> it.substringAfter("?id=").substringBefore("&").let { id ->
+        "drive.google.com" -> it.substringAfter("?id=").let { id ->
             "https://drive.google.com/thumbnail?id=$id&sz=w1920"
         }
         else -> it
