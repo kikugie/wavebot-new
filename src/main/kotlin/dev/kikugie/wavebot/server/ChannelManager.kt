@@ -123,7 +123,7 @@ object ChannelManager {
     }
 
     suspend fun edit(message: Message, entry: ApplicationData, discord: String) = kotlin.runCatching {
-        val member = checkNotNull(GUILD.getMemberOrNull(Snowflake(discord))) { "Member '$discord' not found" }
+        val member = checkNotNull(ApplicationData.findMember(discord)) { "Member '$discord' not found" }
         check(STORAGE.tickets[member.id] == null) { "User already has a ticket" }
 
         entry.discord = discord

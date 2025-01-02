@@ -20,10 +20,12 @@ private const val IDK = "?"
 private inline fun ApplicationType.build(action: ApplicationData.() -> Unit) = kotlin.runCatching {
     ApplicationData(this).apply(action)
 }
+
 private fun List<String>.getOrIDK(index: Int) = getOrNull(index)?.takeIf(String::isNotBlank) ?: IDK
 private fun MutableMap<String, String>.byIndex(index: Int, list1: List<String>, list2: List<String>) {
     put(list1[index], list2.getOrNull(index)?.takeIf { it.isNotBlank() } ?: return)
 }
+
 private fun ApplicationData.defaults(data: List<String>) {
     discord = data.getOrIDK(1)
     minecraft = data.getOrIDK(2)
@@ -31,6 +33,7 @@ private fun ApplicationData.defaults(data: List<String>) {
     timezone = data.getOrIDK(4)
     pronouns = data.getOrIDK(5)
 }
+
 private fun String.limitTo(n: Int) = if (length <= n) this else "${take(n - 3)}..."
 
 @Serializable
@@ -53,9 +56,7 @@ class ApplicationData(val type: ApplicationType) {
 
     fun toReference(list: List<ApplicationData>) = ApplicationReference(type.text, list.indexOf(this))
 
-    suspend fun findMember(): Member? = GUILD.members
-        .filter { it.username == discord || it.tag == discord || it.effectiveName == discord }
-        .firstOrNull()
+    suspend fun findMember(): Member? = Companion.findMember(discord)
 
     fun preview(builder: MessageBuilder) = builder.embed {
         color = type.color
@@ -83,8 +84,13 @@ class ApplicationData(val type: ApplicationType) {
     }
 
     companion object {
-        @JvmStatic fun parse(type: String, keys: List<String>, data: List<String>): Result<ApplicationData> =
+        @JvmStatic
+        fun parse(type: String, keys: List<String>, data: List<String>): Result<ApplicationData> =
             ApplicationType.of(type).parse(keys, data.map { it.trim() })
+
+        suspend fun findMember(discord: String): Member? = GUILD.members
+            .filter { it.username == discord || it.tag == discord || it.effectiveName == discord }
+            .firstOrNull()
     }
 }
 
@@ -157,6 +163,7 @@ enum class ApplicationType {
     abstract fun parse(keys: List<String>, data: List<String>): Result<ApplicationData>
 
     companion object {
-        @JvmStatic fun of(value: String) = valueOf(value.uppercase())
+        @JvmStatic
+        fun of(value: String) = valueOf(value.uppercase())
     }
 }
