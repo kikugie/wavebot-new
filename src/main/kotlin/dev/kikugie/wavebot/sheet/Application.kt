@@ -1,12 +1,14 @@
 package dev.kikugie.wavebot.sheet
 
 import dev.kikugie.wavebot.Main.GUILD
+import dev.kikugie.wavebot.util.*
 import dev.kikugie.wavebot.util.GroupingDictionary
-import dev.kikugie.wavebot.util.group
+import dev.kikugie.wavebot.util.findLinks
 import dev.kikugie.wavebot.util.referring
 import dev.kord.common.Color
 import dev.kord.core.behavior.channel.MessageChannelBehavior
 import dev.kord.core.behavior.channel.createEmbed
+import dev.kord.core.behavior.channel.createMessage
 import dev.kord.core.entity.Member
 import dev.kord.rest.builder.message.create.UserMessageCreateBuilder
 import dev.kord.rest.builder.message.embed
@@ -55,7 +57,7 @@ class ApplicationData(val type: ApplicationType) {
         .filter { it.username == discord || it.tag == discord || it.nickname == discord }
         .firstOrNull()
 
-    suspend fun preview(builder: UserMessageCreateBuilder) = builder.embed {
+    fun preview(builder: UserMessageCreateBuilder) = builder.embed {
         color = type.color
         title = "${minecraft.referring()} ${type.text} application"
         field { name = "Discord"; value = discord; inline = true }
@@ -65,13 +67,18 @@ class ApplicationData(val type: ApplicationType) {
         field { name = "Timezone"; value = timezone; inline = true }
     }
 
-    suspend fun contents(thread: MessageChannelBehavior) = answers.forEach {
-        if (it.isNotEmpty()) thread.createEmbed {
+    suspend fun contents(thread: MessageChannelBehavior) {
+        val links: MutableList<String> = mutableListOf()
+        for (it in answers) if (it.isNotEmpty()) thread.createEmbed {
             color = type.color
             for ((key, answer) in it) field {
+                findLinks(answer).forEach(links::add)
                 name = key
                 value = answer.limitTo(1000)
             }
+        }
+        if (links.isNotEmpty()) for (it in links.windowed(10, 10, true)) thread.createMessage {
+            content = it.joinToString("\n")
         }
     }
 

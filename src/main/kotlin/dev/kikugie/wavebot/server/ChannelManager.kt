@@ -18,7 +18,6 @@ import dev.kord.core.behavior.channel.edit
 import dev.kord.core.behavior.channel.editMemberPermission
 import dev.kord.core.behavior.channel.threads.edit
 import dev.kord.core.behavior.createTextChannel
-import dev.kord.core.behavior.edit
 import dev.kord.core.behavior.getChannelOf
 import dev.kord.core.behavior.getChannelOfOrNull
 import dev.kord.core.entity.Message
@@ -86,7 +85,6 @@ object ChannelManager {
         STORAGE.tickets[member.id] = ticket
         STORAGE.save()
 
-        message.edit { components { applyToMessage() } }
         member.addRole(CONFIG.server.applicantRole)
         channel.editMemberPermission(member.id) {
             allowed = Permission.ViewChannel + Permission.SendMessages
@@ -112,7 +110,6 @@ object ChannelManager {
         STORAGE.tickets[member.id] = ticket
         STORAGE.save()
 
-        message.edit { components { applyToMessage() } }
         member.asUser().dm {
             content = """
                 ## ${Translations.Deny.title.translate()}

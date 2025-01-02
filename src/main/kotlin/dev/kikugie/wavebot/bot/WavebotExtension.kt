@@ -12,7 +12,7 @@ import dev.kikugie.wavebot.server.ChannelManager
 import dev.kikugie.wavebot.server.RuntimeData
 import dev.kord.common.entity.Permission
 import dev.kord.core.behavior.interaction.respondEphemeral
-import dev.kord.core.event.interaction.GuildButtonInteractionCreateEvent
+import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kordex.core.extensions.Extension
 import dev.kordex.core.extensions.ephemeralMessageCommand
 import dev.kordex.core.extensions.ephemeralSlashCommand
@@ -25,7 +25,7 @@ class WavebotExtension : Extension() {
     override val name: String = "wavebot"
 
     override suspend fun setup() {
-        event<GuildButtonInteractionCreateEvent> {
+        event<ButtonInteractionCreateEvent> {
             check {
                 failIf(!event.interaction.componentId.startsWith("wavebot/ticket"))
             }
