@@ -54,7 +54,7 @@ class ApplicationData(val type: ApplicationType) {
     fun toReference(list: List<ApplicationData>) = ApplicationReference(type.text, list.indexOf(this))
 
     suspend fun findMember(): Member? = GUILD.members
-        .filter { it.username == discord || it.tag == discord || it.nickname == discord }
+        .filter { it.username == discord || it.tag == discord || it.effectiveName == discord }
         .firstOrNull()
 
     fun preview(builder: UserMessageCreateBuilder) = builder.embed {
@@ -78,7 +78,9 @@ class ApplicationData(val type: ApplicationType) {
             }
         }
         if (links.isNotEmpty()) for (it in links.windowed(10, 10, true)) thread.createMessage {
-            content = it.joinToString("\n")
+            for (link in it) embed {
+                image = link
+            }
         }
     }
 

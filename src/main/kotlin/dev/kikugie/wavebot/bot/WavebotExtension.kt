@@ -11,8 +11,11 @@ import dev.kikugie.wavebot.i18n.Translations.Wavebot.Extension as Translations
 import dev.kikugie.wavebot.server.ChannelManager
 import dev.kikugie.wavebot.server.RuntimeData
 import dev.kord.common.entity.Permission
-import dev.kord.core.behavior.interaction.respondEphemeral
+import dev.kord.common.entity.TextInputStyle
+import dev.kord.core.behavior.interaction.modal
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
+import dev.kord.core.event.interaction.ModalSubmitInteractionCreateEvent
+import dev.kordex.core.components.forms.ModalForm
 import dev.kordex.core.extensions.Extension
 import dev.kordex.core.extensions.ephemeralMessageCommand
 import dev.kordex.core.extensions.ephemeralSlashCommand
@@ -35,34 +38,51 @@ class WavebotExtension : Extension() {
                 LOGGER.debug("Processing ticket button interaction: {}", message.id)
 
                 val entry = STORAGE.messages[message.id]?.toEntry(STORAGE.applications) ?: run {
-                    event.interaction.respondEphemeral { content = "Selected message is not an application" }
+                    LOGGER.error("Selected message is not an application")
                     return@action
                 }
 
                 when (event.interaction.componentId.substringAfterLast('/')) {
-                    "open" -> ChannelManager.ticket(message, entry)
-                        .onSuccess {
-                            event.interaction.respondEphemeral { content = "Ticket created" }
-                        }
-                        .onFailure {
-                            LOGGER.error("Failed to create ticket", it)
-                            event.interaction.respondEphemeral { content = "Failed to create ticket: ${it.message}" }
-                        }
+                    "open" -> ChannelManager.ticket(message, entry).onFailure {
+                        LOGGER.error("Failed to create ticket", it)
+                    }
 
-                    "deny" -> ChannelManager.deny(message, entry)
-                        .onSuccess {
-                            event.interaction.respondEphemeral { content = "Ticket denied" }
-                        }
-                        .onFailure {
-                            LOGGER.error("Failed to deny ticket", it)
-                            event.interaction.respondEphemeral { content = "Failed to deny ticket: ${it.message}" }
-                        }
+                    "deny" -> ChannelManager.deny(message, entry).onFailure {
+                        LOGGER.error("Failed to deny ticket", it)
+                    }
 
-                    else -> event.interaction.respondEphemeral { content = "Unknown action" }
+                    "edit" -> {
+                        event.interaction.modal("Edit discord", "wavebot/form/edit") {
+                            actionRow {
+                                textInput(TextInputStyle.Short, "content", "Edit discord") {
+                                    required = true
+                                }
+                            }
+                        }
+                    }
+
+                    else -> LOGGER.error("Unknown ticket button interaction: {}", event.interaction.componentId)
                 }
             }
         }
 
+        event<ModalSubmitInteractionCreateEvent> {
+            check {
+                failIf(!event.interaction.modalId.startsWith("wavebot/form/edit"))
+            }
+            action {
+                val entry = STORAGE.messages[event.interaction.message?.id]?.toEntry(STORAGE.applications) ?: run {
+                    LOGGER.error("Selected message is not an application")
+                    return@action
+                }
+
+                val content = event.interaction.textInputs["content"]?.value ?: run {
+                    LOGGER.error("No content provided")
+                }
+
+                ChannelManager.edit(event.interaction.message!!, entry, content.toString())
+            }
+        }
         ephemeralMessageCommand {
             name = Translations.ticket
 
@@ -107,6 +127,25 @@ class WavebotExtension : Extension() {
                             LOGGER.error("Failed to deny ticket", it)
                             respond { content = "Failed to deny ticket: ${it.message}" }
                         }
+                }
+            }
+        }
+        ephemeralMessageCommand(::EditDiscordForm) {
+            name = Translations.deny
+
+            guild(GUILD.id)
+            requirePermission(Permission.ManageRoles)
+            action {
+                targetMessages.forEach { message ->
+                    val entry = STORAGE.messages[message.id]?.toEntry(STORAGE.applications) ?: run {
+                        respond { content = "Selected message is not an application" }
+                        return@forEach
+                    }
+                    val content = it?.content?.value ?: run {
+                        respond { content = "No content provided" }
+                        return@action
+                    }
+                    ChannelManager.edit(message, entry, content)
                 }
             }
         }
@@ -162,6 +201,13 @@ class WavebotExtension : Extension() {
                 Main.update()
                 respond { content = "Configuration reloaded" }
             }
+        }
+    }
+
+    private inner class EditDiscordForm : ModalForm() {
+        override var title: Key = Translations.edit
+        val content = lineText {
+            label = Translations.edit
         }
     }
 }

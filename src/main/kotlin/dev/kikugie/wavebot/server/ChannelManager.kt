@@ -50,6 +50,9 @@ object ChannelManager {
                     interactionButton(ButtonStyle.Danger, "wavebot/ticket/deny") {
                         label = "Deny ticket"
                     }
+                    interactionButton(ButtonStyle.Danger, "wavebot/ticket/edit") {
+                        label = "Edit discord"
+                    }
                 }
             }
         }.also {
@@ -116,6 +119,14 @@ object ChannelManager {
                 ${Translations.Deny.body.translate()}
             """.trimIndent()
         }
+    }
+
+    suspend fun edit(message: Message, entry: ApplicationData, discord: String) = kotlin.runCatching {
+        val member = checkNotNull(GUILD.getMemberOrNull(Snowflake(discord))) { "Member '$discord' not found" }
+        check(STORAGE.tickets[member.id] == null) { "User already has a ticket" }
+
+        entry.discord = discord
+        STORAGE.save()
     }
 
     suspend fun accept(ticket: Ticket) = kotlin.runCatching {
