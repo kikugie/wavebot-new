@@ -51,7 +51,7 @@ object ChannelManager {
                     interactionButton(ButtonStyle.Danger, "wavebot/ticket/deny") {
                         label = "Deny ticket"
                     }
-                    interactionButton(ButtonStyle.Link, "wavebot/ticket/edit") {
+                    interactionButton(ButtonStyle.Secondary, "wavebot/ticket/edit") {
                         label = "Edit discord"
                     }
                 }

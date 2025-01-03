@@ -15,7 +15,7 @@ inline fun GroupingDictionary.group(block: MutableMap<String, String>.() -> Unit
     if (map.isNotEmpty()) this += map
 }
 
-internal val URL_PATTERN = Regex("""(https://www\.|http://www\.|https://|http://)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?/[a-zA-Z0-9]{2,}|((https://www\.|http://www\.|https://|http://)?[a-zA-Z]{2,}(\.[a-zA-Z]{2,})(\.[a-zA-Z]{2,})?)|(https://www\.|http://www\.|https://|http://)?[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}\.[a-zA-Z0-9]{2,}(\.[a-zA-Z0-9]{2,})?""")
+internal val URL_PATTERN = Regex("""[(htps)?:/w.a-zA-Z0-9@%_+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_+.~#?&/=]*)""")
 
 internal fun findLinks(text: String) = URL_PATTERN.findAll(text).map { it.value }.mapNotNull {
     val url = runCatching { URI.create(it).toURL() }.getOrNull() ?: return@mapNotNull null

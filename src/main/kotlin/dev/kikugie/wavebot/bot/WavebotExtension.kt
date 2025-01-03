@@ -10,6 +10,7 @@ import dev.kikugie.wavebot.server.BotConfig
 import dev.kikugie.wavebot.server.ChannelManager
 import dev.kikugie.wavebot.server.RuntimeData
 import dev.kord.common.entity.Permission
+import dev.kord.core.behavior.interaction.response.respond
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kordex.core.components.forms.ModalForm
 import dev.kordex.core.extensions.Extension
@@ -40,25 +41,48 @@ class WavebotExtension : Extension() {
                 }
 
                 when (event.interaction.componentId.substringAfterLast('/')) {
-                    "open" -> ChannelManager.ticket(message, entry).onFailure {
-                        LOGGER.error("Failed to create ticket", it)
+                    "open" -> {
+                        val defRes = event.interaction.deferEphemeralResponse()
+                        ChannelManager.ticket(message, entry).onSuccess {
+                            defRes.respond { content = "Successfully opened ticket" }
+                        }.onFailure {
+                            val msg = "Failed to create ticket"
+                            LOGGER.error(msg, it)
+                            defRes.respond { content = "$msg - ${it.message ?: "Unknown"}" }
+                        }
                     }
 
-                    "deny" -> ChannelManager.deny(message, entry).onFailure {
-                        LOGGER.error("Failed to deny ticket", it)
+                    "deny" -> {
+                        val defRes = event.interaction.deferEphemeralResponse()
+                        ChannelManager.deny(message, entry).onSuccess {
+                            defRes.respond { content = "Successfully denied ticket" }
+                        }.onFailure {
+                            val msg = "Failed to deny ticket"
+                            LOGGER.error(msg, it)
+                            defRes.respond { content = "$msg - ${it.message ?: "Unknown"}" }
+                        }
                     }
 
                     "edit" -> {
                         val modal = EditDiscordForm()
-                        val result = modal.sendAndAwait(this) {
-                            it?.textInputs?.get("content")?.value
-                        } ?: kotlin.run {
-                            LOGGER.error("Failed to get modal response")
-                            return@action
-                        }
 
-                        ChannelManager.edit(message, entry, result).onFailure {
-                            LOGGER.error("Failed to edit discord name", it)
+                        modal.sendAndAwait(this) { response ->
+                            val result = response?.textInputs?.get("content")?.value
+
+                            if (result == null) {
+                                LOGGER.error("Failed to get modal response")
+                                return@sendAndAwait
+                            }
+
+                            val defRes = response.deferEphemeralResponse();
+
+                            ChannelManager.edit(message, entry, result).onSuccess {
+                                defRes.respond { content = "Successfully edited discord name" }
+                            }.onFailure {
+                                val msg = "Failed to edit discord name"
+                                LOGGER.error(msg, it)
+                                defRes.respond { content = "$msg - ${it.message ?: "Unknown"}" }
+                            }
                         }
                     }
 
