@@ -78,7 +78,7 @@ class ApplicationData(val type: ApplicationType) {
                 value = answer.limitTo(1000)
             }
         }
-        if (links.isNotEmpty()) for (it in links.windowed(10, 10, true)) thread.createMessage {
+        if (links.isNotEmpty()) for (it in links.windowed(5, 5, true)) thread.createMessage {
             content = it.joinToString("\n")
         }
     }
