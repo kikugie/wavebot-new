@@ -4,6 +4,7 @@ import dev.kikugie.wavebot.sheet.ApplicationData
 import dev.kikugie.wavebot.sheet.ApplicationReference
 import dev.kikugie.wavebot.sheet.Ticket
 import dev.kord.common.entity.Snowflake
+import dev.kord.core.entity.Message
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -17,6 +18,7 @@ data class RuntimeData(
 ): Saveable {
     @Transient
     override val file: String = "runtime.json"
+    fun entry(message: Message) = messages[message.id]?.toEntry(applications)
 
     override fun save() = synchronized(RuntimeData) { super.save()}
     companion object {

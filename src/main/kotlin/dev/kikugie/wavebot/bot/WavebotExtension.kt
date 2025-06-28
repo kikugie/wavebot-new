@@ -10,9 +10,13 @@ import dev.kikugie.wavebot.server.BotConfig
 import dev.kikugie.wavebot.server.ChannelManager
 import dev.kikugie.wavebot.server.RuntimeData
 import dev.kord.common.entity.Permission
+import dev.kord.core.behavior.interaction.ActionInteractionBehavior
+import dev.kord.core.behavior.interaction.response.DeferredEphemeralMessageInteractionResponseBehavior
 import dev.kord.core.behavior.interaction.response.respond
+import dev.kord.core.entity.interaction.ButtonInteraction
 import dev.kord.core.event.interaction.ButtonInteractionCreateEvent
 import dev.kordex.core.components.forms.ModalForm
+import dev.kordex.core.events.EventContext
 import dev.kordex.core.extensions.Extension
 import dev.kordex.core.extensions.ephemeralMessageCommand
 import dev.kordex.core.extensions.ephemeralSlashCommand
@@ -25,70 +29,59 @@ import dev.kikugie.wavebot.i18n.Translations.Wavebot.Extension as Translations
 class WavebotExtension : Extension() {
     override val name: String = "wavebot"
 
+    private suspend fun ActionInteractionBehavior.error(message: String, error: Throwable? = null) =
+        deferEphemeralResponse().error(message, error)
+
+    private suspend fun DeferredEphemeralMessageInteractionResponseBehavior.error(
+        message: String,
+        error: Throwable? = null
+    ) {
+        if (error != null) LOGGER.error(message, error) else LOGGER.error(message)
+        respond { content = "$message - ${error?.message ?: "Unknown"}" }
+    }
+
+    private suspend fun ButtonInteraction.buttonAction(context: EventContext<ButtonInteractionCreateEvent>) {
+        val entry = STORAGE.entry(message) ?: return error("Selected message is not an application")
+        when (componentId.substringAfterLast('/')) {
+            "open" -> with(deferEphemeralResponse()) {
+                ChannelManager.ticket(message, entry).onSuccess {
+                    respond { content = "Successfully opened ticket" }
+                }.onFailure {
+                    error("Failed to create ticket", it)
+                }
+            }
+
+            "close" -> with(deferEphemeralResponse()) {
+                ChannelManager.deny(message, entry).onSuccess {
+                    respond { content = "Successfully denied ticket" }
+                }.onFailure {
+                    error("Failed to deny ticket", it)
+                }
+            }
+
+            "edit" -> EditDiscordForm().sendAndAwait(context) { form ->
+                val result = form?.textInputs?.get("content")?.value
+                    ?: return@sendAndAwait error("Failed to get modal response")
+                val callback = form.deferEphemeralResponse()
+
+                ChannelManager.edit(message, entry, result).onSuccess {
+                    callback.respond { content = "Successfully edited discord name" }
+                }.onFailure {
+                    callback.error("Failed to edit discord name", it)
+                }
+            }
+
+            else -> error("Unknown ticket button interaction: ${componentId.substringAfterLast('/')}")
+        }
+    }
+
     override suspend fun setup() {
         event<ButtonInteractionCreateEvent> {
             check {
                 failIf(!event.interaction.componentId.startsWith("wavebot/ticket"))
             }
 
-            action {
-                val message = event.interaction.message
-                LOGGER.debug("Processing ticket button interaction: {}", message.id)
-
-                val entry = STORAGE.messages[message.id]?.toEntry(STORAGE.applications) ?: run {
-                    LOGGER.error("Selected message is not an application")
-                    return@action
-                }
-
-                when (event.interaction.componentId.substringAfterLast('/')) {
-                    "open" -> {
-                        val defRes = event.interaction.deferEphemeralResponse()
-                        ChannelManager.ticket(message, entry).onSuccess {
-                            defRes.respond { content = "Successfully opened ticket" }
-                        }.onFailure {
-                            val msg = "Failed to create ticket"
-                            LOGGER.error(msg, it)
-                            defRes.respond { content = "$msg - ${it.message ?: "Unknown"}" }
-                        }
-                    }
-
-                    "deny" -> {
-                        val defRes = event.interaction.deferEphemeralResponse()
-                        ChannelManager.deny(message, entry).onSuccess {
-                            defRes.respond { content = "Successfully denied ticket" }
-                        }.onFailure {
-                            val msg = "Failed to deny ticket"
-                            LOGGER.error(msg, it)
-                            defRes.respond { content = "$msg - ${it.message ?: "Unknown"}" }
-                        }
-                    }
-
-                    "edit" -> {
-                        val modal = EditDiscordForm()
-
-                        modal.sendAndAwait(this) { response ->
-                            val result = response?.textInputs?.get("content")?.value
-
-                            if (result == null) {
-                                LOGGER.error("Failed to get modal response")
-                                return@sendAndAwait
-                            }
-
-                            val defRes = response.deferEphemeralResponse();
-
-                            ChannelManager.edit(message, entry, result).onSuccess {
-                                defRes.respond { content = "Successfully edited discord name" }
-                            }.onFailure {
-                                val msg = "Failed to edit discord name"
-                                LOGGER.error(msg, it)
-                                defRes.respond { content = "$msg - ${it.message ?: "Unknown"}" }
-                            }
-                        }
-                    }
-
-                    else -> LOGGER.error("Unknown ticket button interaction: {}", event.interaction.componentId)
-                }
-            }
+            action { event.interaction.buttonAction(this@action) }
         }
 
         ephemeralMessageCommand {

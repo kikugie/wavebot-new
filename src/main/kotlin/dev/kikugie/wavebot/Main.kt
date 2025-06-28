@@ -70,7 +70,7 @@ object Main {
     }
 
     internal suspend fun update() {
-        for (it in CONFIG.sheets.keys) Spreadsheet.request(it).onSuccess { sheet ->
+        for (it in CONFIG.sheets.keys) Spreadsheet.request(it, CONFIG).onSuccess { sheet ->
             val new = Spreadsheet.update(it, sheet)
             LOGGER.info("Received ${new.size} new applications for '$it'")
             for (data in new) ChannelManager.preview(data).onFailure { e ->

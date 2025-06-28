@@ -4,7 +4,9 @@ import dev.kikugie.wavebot.Grid
 import dev.kikugie.wavebot.Main.CONFIG
 import dev.kikugie.wavebot.Main.JSON
 import dev.kikugie.wavebot.Main.STORAGE
+import dev.kikugie.wavebot.server.BotConfig
 import dev.kordex.core.utils.env
+import dev.kordex.core.utils.getOfOrDefault
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -17,14 +19,16 @@ object Spreadsheet {
     private val TOKEN = env("GOOGLE_TOKEN")
     private val CLIENT = HttpClient()
 
-    suspend fun request(type: String): Result<Table> {
+    suspend fun request(type: String, config: BotConfig): Result<Table> {
         val source: String = CONFIG.source
         val sheet: String = CONFIG.sheets[type]!!
         val url: String = URL_BASE.format(source, sheet, TOKEN).replace(" ", "%20")
         val response: HttpResponse = CLIENT.get(url)
         return kotlin.runCatching {
             val unfiltered = JSON.decodeFromString<Table>(response.bodyAsText())
-            Table(unfiltered.range, unfiltered.values.first(), unfiltered.values.filter { it.isApplication() })
+            val known = unfiltered.values.drop(config.offsets.getOfOrDefault(type, 0) + 1)
+                .filter { it.isApplication() }
+            Table(unfiltered.range, unfiltered.values.first(), known)
         }
     }
 
