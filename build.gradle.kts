@@ -53,6 +53,10 @@ kordEx {
     }
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 application {
     mainClass = "dev.kikugie.wavebot.MainKt"
 }
