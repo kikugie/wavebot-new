@@ -80,9 +80,10 @@ object Main {
             LOGGER.error("Failed to fetch spreadsheet for '$it'", e)
         }
         val now = Clock.System.now()
-        for ((_, it) in STORAGE.tickets)
+        for ((id, it) in STORAGE.tickets)
             if (it.state == TicketState.REJECTED && now - it.countdown <= CONFIG.countdown) it.runCatching {
                 LOGGER.info("Deleting #${GUILD.getChannel(it.channel).name}")
+                STORAGE.tickets -= id
                 ChannelManager.delete(it)
             }.onFailure {
                 LOGGER.error("Failed to delete the channel", it)
