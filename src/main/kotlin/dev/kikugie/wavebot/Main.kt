@@ -83,7 +83,9 @@ object Main {
         for ((id, it) in STORAGE.tickets)
             if (it.state == TicketState.REJECTED && now - it.countdown <= CONFIG.countdown) it.runCatching {
                 LOGGER.info("Deleting #${GUILD.getChannelOrNull(it.channel)?.name}")
-                STORAGE.tickets -= id
+                synchronized(STORAGE.tickets) {
+                    STORAGE.tickets -= id
+                }
                 ChannelManager.delete(it)
             }.onFailure {
                 LOGGER.error("Failed to delete the channel", it)
