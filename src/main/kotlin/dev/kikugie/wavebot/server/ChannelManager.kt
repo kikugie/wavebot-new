@@ -1,5 +1,6 @@
 package dev.kikugie.wavebot.server
 
+import dev.kikugie.wavebot.Main
 import dev.kikugie.wavebot.Main.CONFIG
 import dev.kikugie.wavebot.Main.GUILD
 import dev.kikugie.wavebot.Main.STORAGE
@@ -114,6 +115,7 @@ object ChannelManager {
         STORAGE.tickets[member.id] = ticket
         STORAGE.save()
 
+        Main.LOGGER.info("Denying #${member.effectiveName}")
         member.asUser().dm {
             content = """
                 ## ${Translations.Deny.title.translate()}
@@ -140,6 +142,8 @@ object ChannelManager {
         STORAGE.save()
         member.removeRole(CONFIG.server.applicantRole)
         member.addRole(CONFIG.server.provisionalRole)
+        Main.LOGGER.info("Accepting #${channel.name}")
+
         channel.createMessage {
             content = """
                 ## ${Translations.Accept.title.translateNamed("user" to member.mention)}
@@ -161,6 +165,8 @@ object ChannelManager {
         ticket.state = TicketState.REJECTED
         STORAGE.save()
         val removal = Clock.System.now() + CONFIG.countdown
+        Main.LOGGER.info("Scheduling #${channel.name} for removal in ${CONFIG.countdown}")
+
         if (member == null) channel.createMessage(Translations.Reject.empty.translateNamed("time" to "<t:${removal.epochSeconds}:R>"))
         else {
             member.removeRole(CONFIG.server.applicantRole)
@@ -170,10 +176,10 @@ object ChannelManager {
                     ${Translations.Reject.body.translateNamed("time" to "<t:${removal.epochSeconds}:R>")}
                 """.trimIndent()
             }
-            channel.editMemberPermission(member.id) {
-                denied = Permissions(Permission.SendMessages)
-                allowed = Permissions(Permission.ViewChannel)
-            }
+//            channel.editMemberPermission(member.id) {
+//                denied = Permissions(Permission.SendMessages)
+//                allowed = Permissions(Permission.ViewChannel)
+//            }
         }
     }
 

@@ -27,7 +27,6 @@ object Spreadsheet {
         return kotlin.runCatching {
             val unfiltered = JSON.decodeFromString<Table>(response.bodyAsText())
             val known = unfiltered.values.drop(config.offsets.getOfOrDefault(type, 0) + 1)
-                .filter { it.isApplication() }
             Table(unfiltered.range, unfiltered.values.first(), known)
         }
     }
@@ -42,8 +41,6 @@ object Spreadsheet {
         STORAGE.save()
         return new
     }
-
-    private fun List<String>.isApplication() = firstOrNull()?.contains("202") == true
 
     @Serializable
     data class Table(val range: String, val keys: List<String> = emptyList(), val values: Grid<String>)
