@@ -80,15 +80,18 @@ object Main {
             LOGGER.error("Failed to fetch spreadsheet for '$it'", e)
         }
         val now = Clock.System.now()
+        val removal = mutableSetOf<Snowflake>()
         for ((id, it) in STORAGE.tickets)
             if (it.state == TicketState.REJECTED && now - it.countdown <= CONFIG.countdown) it.runCatching {
                 LOGGER.info("Deleting #${GUILD.getChannelOrNull(it.channel)?.name}")
-                synchronized(STORAGE.tickets) {
-                    STORAGE.tickets -= id
-                }
+                removal += id
                 ChannelManager.delete(it)
             }.onFailure {
                 LOGGER.error("Failed to delete the channel", it)
             }
+
+        synchronized(STORAGE.tickets) {
+            STORAGE.tickets -= removal
+        }
     }
 }
