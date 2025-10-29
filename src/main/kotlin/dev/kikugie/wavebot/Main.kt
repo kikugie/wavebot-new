@@ -81,9 +81,11 @@ object Main {
         }
         val now = Clock.System.now()
         for ((_, it) in STORAGE.tickets)
-            if (it.state == TicketState.REJECTED && now - it.countdown <= CONFIG.countdown) {
+            if (it.state == TicketState.REJECTED && now - it.countdown <= CONFIG.countdown) it.runCatching {
                 LOGGER.info("Deleting #${GUILD.getChannel(it.channel).name}")
                 ChannelManager.delete(it)
+            }.onFailure {
+                LOGGER.error("Failed to delete the channel", it)
             }
     }
 }
