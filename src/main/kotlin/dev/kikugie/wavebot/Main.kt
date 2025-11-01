@@ -82,7 +82,7 @@ object Main {
         val now = Clock.System.now()
         val removal = mutableSetOf<Snowflake>()
         for ((id, it) in STORAGE.tickets)
-            if (it.state == TicketState.REJECTED && now - it.countdown <= CONFIG.countdown) it.runCatching {
+            if (it.state == TicketState.REJECTED && now - it.countdown >= CONFIG.countdown) it.runCatching {
                 LOGGER.info("Deleting #${GUILD.getChannelOrNull(it.channel)?.name}")
                 removal += id
                 ChannelManager.delete(it)
