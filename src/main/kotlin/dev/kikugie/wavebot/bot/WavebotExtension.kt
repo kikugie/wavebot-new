@@ -51,7 +51,7 @@ class WavebotExtension : Extension() {
                 }
             }
 
-            "close" -> with(deferEphemeralResponse()) {
+            "deny" -> with(deferEphemeralResponse()) {
                 ChannelManager.deny(message, entry).onSuccess {
                     respond { content = "Successfully denied ticket" }
                 }.onFailure {
