@@ -167,7 +167,8 @@ object ChannelManager {
         val removal = Clock.System.now() + CONFIG.countdown
         Main.LOGGER.info("Scheduling #${channel.name} for removal in ${CONFIG.countdown}")
 
-        if (member == null) channel.createMessage(Translations.Reject.empty.translateNamed("time" to "<t:${removal.epochSeconds}:R>"))
+        if (member == null)
+            channel.createMessage(Translations.Reject.empty.translateNamed("time" to "<t:${removal.epochSeconds}:R>"))
         else {
             member.removeRole(CONFIG.server.applicantRole)
             channel.createMessage {
@@ -180,6 +181,10 @@ object ChannelManager {
 //                denied = Permissions(Permission.SendMessages)
 //                allowed = Permissions(Permission.ViewChannel)
 //            }
+        }
+        channel.edit {
+            parentId = CONFIG.server.rejectedCategory
+            position = 0
         }
     }
 
