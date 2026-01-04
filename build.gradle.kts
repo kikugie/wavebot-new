@@ -57,6 +57,12 @@ kotlin {
     jvmToolchain(21)
 }
 
+java {
+    toolchain {
+        vendor = JvmVendorSpec.ADOPTIUM
+    }
+}
+
 application {
     mainClass = "dev.kikugie.wavebot.MainKt"
 }
