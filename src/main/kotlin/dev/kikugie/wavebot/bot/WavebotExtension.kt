@@ -21,6 +21,7 @@ import dev.kordex.core.extensions.Extension
 import dev.kordex.core.extensions.ephemeralMessageCommand
 import dev.kordex.core.extensions.ephemeralSlashCommand
 import dev.kordex.core.extensions.event
+import dev.kordex.core.extensions.publicSlashCommand
 import dev.kordex.core.i18n.types.Key
 import kotlinx.serialization.ExperimentalSerializationApi
 import dev.kikugie.wavebot.i18n.Translations.Wavebot.Extension as Translations
@@ -208,6 +209,17 @@ class WavebotExtension : Extension() {
                 STORAGE = load("runtime.json", RuntimeData.Companion::empty)
                 Main.update()
                 respond { content = "Configuration reloaded" }
+            }
+        }
+
+        publicSlashCommand {
+            name = Key("query")
+            description = Key("Print applications")
+
+            guild(GUILD.id)
+            requirePermission(Permission.ManageRoles)
+            action {
+                ChannelManager.query(this)
             }
         }
     }

@@ -33,5 +33,6 @@ data class ServerData(
     @SerialName("rejected_category_id") val rejectedCategory: Snowflake = Snowflake(0),
     @SerialName("applicant_role_id") val applicantRole: Snowflake = Snowflake(0),
     @SerialName("provisional_role_id") val provisionalRole: Snowflake = Snowflake(0),
+    @SerialName("moderator_role_id") val moderatorRole: Snowflake = Snowflake(0),
     @SerialName("voice_channel_id") val voiceChannel: Snowflake = Snowflake(0),
 )

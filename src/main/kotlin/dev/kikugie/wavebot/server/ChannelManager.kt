@@ -6,6 +6,7 @@ import dev.kikugie.wavebot.Main.GUILD
 import dev.kikugie.wavebot.Main.STORAGE
 import dev.kikugie.wavebot.i18n.Translations.Wavebot.Extension.Message as Translations
 import dev.kikugie.wavebot.sheet.ApplicationData
+import dev.kikugie.wavebot.sheet.ApplicationReference
 import dev.kikugie.wavebot.sheet.Ticket
 import dev.kikugie.wavebot.sheet.TicketState
 import dev.kikugie.wavebot.util.referring
@@ -27,9 +28,15 @@ import dev.kord.core.entity.channel.TextChannel
 import dev.kord.core.entity.channel.VoiceChannel
 import dev.kord.core.entity.channel.thread.ThreadChannel
 import dev.kord.rest.builder.message.actionRow
+import dev.kord.rest.builder.message.embed
 import dev.kordex.core.components.components
+import dev.kordex.core.types.GenericInteractionContext
 import dev.kordex.core.utils.addReaction
 import dev.kordex.core.utils.dm
+import dev.kordex.core.utils.getJumpUrl
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 
@@ -192,4 +199,39 @@ object ChannelManager {
         check(ticket.state == TicketState.REJECTED) { "Ticket is not rejected" }
         GUILD.getChannelOf<TextChannel>(ticket.channel).delete()
     }
+
+    suspend fun query(ctx: GenericInteractionContext) = coroutineScope {
+        val channel = GUILD.getChannelOf<TextChannel>(CONFIG.server.previewChannel)
+        val pending = STORAGE.messages.map { (msg, ref) ->
+            async { isPending(channel, msg, ref) }
+        }.awaitAll().filterNotNull()
+
+        val channels = STORAGE.tickets.values.filter { it.state != TicketState.ACCEPTED }.map {
+            async { it to GUILD.getChannelOfOrNull<TextChannel>(it.channel) }
+        }.awaitAll().mapNotNull { (ticket, channel) ->
+            if (channel == null) return@mapNotNull null
+            ticket to channel
+        }.toMap()
+
+        val active = channels.filter { (it, _) -> it.state == TicketState.OPEN }
+        val waiting = channels.filter { (it, _) -> it.state == TicketState.REJECTED }
+
+        ctx.respond {
+            embed {
+                title = "Applications"
+                field("Pending: ${pending.size}") {
+                    pending.joinToString("\n") { "- ${it.getJumpUrl()}" }
+                }
+                field("Active: ${active.size}") {
+                    active.values.joinToString("\n") { "- ${it.getJumpUrl()}" }
+                }
+                field("Rejected: ${waiting.size}") {
+                    waiting.values.joinToString("\n") { "- ${it.getJumpUrl()}" }
+                }
+            }
+        }
+    }
+
+    private suspend fun isPending(channel: TextChannel, msg: Snowflake, ref: ApplicationReference): Message? =
+        channel.getMessageOrNull(msg)?.takeIf { it.reactions.none { it.emoji.name == CHECKMARK || it.emoji.name == CROSSMARK } }
 }
