@@ -62,6 +62,7 @@ fn logging() {
         || matches!(std::env::var("ENVIRONMENT").as_deref(), Ok("dev" | "development"));
     let logger = env_logger::Builder::new()
         .filter_level(if dev { LevelFilter::Debug } else { LevelFilter::Info })
+        .filter_module("tracing::span", LevelFilter::Off)
         .target(if dev { env_logger::Target::Stdout } else { env_logger::Target::Stderr })
         .build();
     log::set_max_level(logger.filter());
