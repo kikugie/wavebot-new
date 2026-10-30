@@ -4,7 +4,6 @@ import dev.kikugie.wavebot.Main
 import dev.kikugie.wavebot.Main.CONFIG
 import dev.kikugie.wavebot.Main.GUILD
 import dev.kikugie.wavebot.Main.STORAGE
-import dev.kikugie.wavebot.i18n.Translations.Wavebot.Extension.Message as Translations
 import dev.kikugie.wavebot.sheet.ApplicationData
 import dev.kikugie.wavebot.sheet.ApplicationReference
 import dev.kikugie.wavebot.sheet.Ticket
@@ -37,7 +36,7 @@ import dev.kordex.core.utils.getJumpUrl
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 
 @ExperimentalSerializationApi
@@ -104,8 +103,8 @@ object ChannelManager {
         val voice = GUILD.getChannelOfOrNull<VoiceChannel>(CONFIG.server.voiceChannel)
         channel.createMessage {
             content = """
-                ## ${Translations.Welcome.title.translateNamed("user" to member.mention)}
-                ${Translations.Welcome.body.translateNamed("voice" to voice?.mention.orEmpty())}
+                ## Welcome to your application channel, ${member.mention}!
+                You're welcome to share details about your projects and technical experience here, as well as introduce yourself to the server members. During this period you also have access to ${voice?.mention.orEmpty()} if you want to engage with the server. Afterwards, whenever you're accepted or rejected will be determined by the vote among the server members, and you'll be notified about the decision.
             """.trimIndent()
         }
     }
@@ -125,8 +124,8 @@ object ChannelManager {
         Main.LOGGER.info("Denying #${member.effectiveName}")
         member.asUser().dm {
             content = """
-                ## ${Translations.Deny.title.translate()}
-                ${Translations.Deny.body.translate()}
+                ## Sorry, your Wavetech application has been rejected.
+                Don't be discouraged! You're welcome to apply again when applications reopen. In the meantime, feel free to hone your skills and prepare for another opportunity. Best of luck!
             """.trimIndent()
         }
     }
@@ -153,8 +152,8 @@ object ChannelManager {
 
         channel.createMessage {
             content = """
-                ## ${Translations.Accept.title.translateNamed("user" to member.mention)}
-                ${Translations.Accept.body.translate()}
+                ## Welcome to Wavetech, ${member.mention}!
+                Your application has been accepted and your provisional period begins. You're able to chat in all member channels and join all Minecraft servers (SMP, CMP, copy, etc.). This can last for a while, and if you fit in the community and are actively playing, you'll be promoted to a permanent member. Have fun!
             """.trimIndent()
         }
         channel.edit {
@@ -175,13 +174,13 @@ object ChannelManager {
         Main.LOGGER.info("Scheduling #${channel.name} for removal in ${CONFIG.countdown}")
 
         if (member == null)
-            channel.createMessage(Translations.Reject.empty.translateNamed("time" to "<t:${removal.epochSeconds}:R>"))
+            channel.createMessage("The application has been rejected, but the applicant has left the server. This channel will be deleted in approximately <t:${removal.epochSeconds}:R>.")
         else {
             member.removeRole(CONFIG.server.applicantRole)
             channel.createMessage {
                 content = """
-                    ## ${Translations.Reject.title.translateNamed("user" to member.mention)}
-                    ${Translations.Reject.body.translateNamed("time" to "<t:${removal.epochSeconds}:R>")}
+                    ## Thank you for applying, ${member.mention}.
+                    Unfortunately, your application has been rejected this time. Don't be discouraged! You're welcome to apply again when applications reopen. In the meantime, feel free to hone your skills and prepare for another opportunity. Best of luck! This channel will be deleted in approximately <t:${removal.epochSeconds}:R>.
                 """.trimIndent()
             }
 //            channel.editMemberPermission(member.id) {

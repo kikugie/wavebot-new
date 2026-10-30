@@ -6,7 +6,6 @@ plugins {
     alias(common.plugins.kotlin.jvm)
     alias(common.plugins.kotlin.serialization)
 
-    alias(libs.plugins.kordex.docker)
     alias(libs.plugins.kordex.plugin)
     alias(libs.plugins.ksp.plugin)
 }
@@ -16,6 +15,7 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven("https://maven.kikugie.dev/releases")
 }
 
 dependencies {
@@ -39,17 +39,13 @@ dependencies {
 kordEx {
     // https://github.com/gradle/gradle/issues/31383
     kordExVersion = libs.versions.kordex.asProvider()
+    ignoreIncompatibleKotlinVersion = true
 
     bot {
         // See https://docs.kordex.dev/data-collection.html
         dataCollection(DataCollection.None)
 
         mainClass = "dev.kikugie.wavebot.MainKt"
-    }
-
-    i18n {
-        classPackage = "dev.kikugie.wavebot.i18n"
-        translationBundle = "wavebot.strings"
     }
 }
 

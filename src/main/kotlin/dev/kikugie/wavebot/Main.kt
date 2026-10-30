@@ -16,7 +16,7 @@ import dev.kord.core.entity.Guild
 import dev.kordex.core.ExtensibleBot
 import dev.kordex.core.utils.env
 import kotlinx.coroutines.*
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream

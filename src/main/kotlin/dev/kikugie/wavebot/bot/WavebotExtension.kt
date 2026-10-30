@@ -22,9 +22,8 @@ import dev.kordex.core.extensions.ephemeralMessageCommand
 import dev.kordex.core.extensions.ephemeralSlashCommand
 import dev.kordex.core.extensions.event
 import dev.kordex.core.extensions.publicSlashCommand
-import dev.kordex.core.i18n.types.Key
+import dev.kordex.i18n.Key
 import kotlinx.serialization.ExperimentalSerializationApi
-import dev.kikugie.wavebot.i18n.Translations.Wavebot.Extension as Translations
 
 @OptIn(ExperimentalSerializationApi::class)
 class WavebotExtension : Extension() {
@@ -86,7 +85,7 @@ class WavebotExtension : Extension() {
         }
 
         ephemeralMessageCommand {
-            name = Translations.ticket
+            name = Key("Open ticket")
 
             guild(GUILD.id)
             requirePermission(Permission.ManageRoles)
@@ -110,7 +109,7 @@ class WavebotExtension : Extension() {
             }
         }
         ephemeralMessageCommand {
-            name = Translations.deny
+            name = Key("Deny ticket")
 
             guild(GUILD.id)
             requirePermission(Permission.ManageRoles)
@@ -133,7 +132,7 @@ class WavebotExtension : Extension() {
             }
         }
         ephemeralMessageCommand(::EditDiscordForm) {
-            name = Translations.edit
+            name = Key("Edit discord")
 
             guild(GUILD.id)
             requirePermission(Permission.ManageRoles)
@@ -160,7 +159,7 @@ class WavebotExtension : Extension() {
         }
         ephemeralSlashCommand {
             name = Key("accept")
-            description = Translations.accept
+            description = Key("Promote the applicant to a provisional")
 
             guild(GUILD.id)
             requirePermission(Permission.ManageRoles)
@@ -180,7 +179,7 @@ class WavebotExtension : Extension() {
         }
         ephemeralSlashCommand {
             name = Key("reject")
-            description = Translations.reject
+            description = Key("Schedule to remove the current interview channel")
 
             guild(GUILD.id)
             requirePermission(Permission.ManageRoles)
@@ -200,7 +199,7 @@ class WavebotExtension : Extension() {
         }
         ephemeralSlashCommand {
             name = Key("reload")
-            description = Translations.reload
+            description = Key("Reload config and storage files")
 
             guild(GUILD.id)
             requirePermission(Permission.ManageRoles)
@@ -225,10 +224,10 @@ class WavebotExtension : Extension() {
     }
 
     private inner class EditDiscordForm : ModalForm() {
-        override var title: Key = Translations.edit
+        override var title: Key = Key("Edit discord")
         val content = lineText {
             id = "content"
-            label = Translations.edit
+            label = Key("Edit discord")
         }
     }
 }

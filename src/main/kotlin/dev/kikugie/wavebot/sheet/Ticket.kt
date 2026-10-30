@@ -1,7 +1,7 @@
 package dev.kikugie.wavebot.sheet
 
 import dev.kord.common.entity.Snowflake
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
 
 @Serializable
