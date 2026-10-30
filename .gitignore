@@ -117,3 +117,7 @@ data/
 /.idea/
 /test.config.json
 /runtime.json
+
+# Rust build output
+/target
+/config.json
