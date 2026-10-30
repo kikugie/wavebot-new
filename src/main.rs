@@ -19,7 +19,6 @@ use chrono::Utc;
 use data::{BotConfig, RuntimeData, Saveable, Snowflake, Ticket, TicketState};
 use log::{Level, LevelFilter};
 use serenity::all::{GatewayIntents, GuildId, Http};
-use std::io::Write;
 use std::sync::{Arc, Mutex, OnceLock, RwLock};
 
 pub struct State {
@@ -40,33 +39,33 @@ fn env(key: &str) -> anyhow::Result<String> {
     std::env::var(key).with_context(|| format!("Environment variable '{key}' is not set"))
 }
 
+struct Quiet(env_logger::Logger);
+
+impl log::Log for Quiet {
+    fn enabled(&self, metadata: &log::Metadata) -> bool {
+        self.0.enabled(metadata)
+    }
+
+    fn log(&self, record: &log::Record) {
+        if record.level() <= Level::Warn || !record.args().to_string().contains("heartbeat") {
+            self.0.log(record);
+        }
+    }
+
+    fn flush(&self) {
+        self.0.flush();
+    }
+}
+
 fn logging() {
     let dev = std::env::var_os("DEV_MODE").is_some()
         || matches!(std::env::var("ENVIRONMENT").as_deref(), Ok("dev" | "development"));
-    env_logger::Builder::new()
+    let logger = env_logger::Builder::new()
         .filter_level(if dev { LevelFilter::Debug } else { LevelFilter::Info })
         .target(if dev { env_logger::Target::Stdout } else { env_logger::Target::Stderr })
-        .format(|buf, record| {
-            let now = chrono::Local::now();
-            let color = match record.level() {
-                Level::Error => "\x1b[1;31m",
-                Level::Warn => "\x1b[31m",
-                Level::Info => "\x1b[34m",
-                _ => "\x1b[39m",
-            };
-            let target = record.target();
-            let skip = target.chars().count().saturating_sub(40);
-            let target: String = target.chars().skip(skip).collect();
-            writeln!(
-                buf,
-                "\x1b[1;32m{}\x1b[0;39m \x1b[1;33m{}\x1b[0;39m \x1b[1;30m|\x1b[0;39m {color}{:>5}\x1b[0;39m \x1b[1;30m|\x1b[0;39m \x1b[1;35m{target:>40}\x1b[0;39m \x1b[1;30m|\x1b[0;39m {}",
-                now.format("%Y-%m-%d"),
-                now.format("%H:%M:%S"),
-                record.level(),
-                record.args()
-            )
-        })
-        .init();
+        .build();
+    log::set_max_level(logger.filter());
+    log::set_boxed_logger(Box::new(Quiet(logger))).unwrap();
 }
 
 #[tokio::main]
